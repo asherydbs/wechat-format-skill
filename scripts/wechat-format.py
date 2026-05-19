@@ -478,9 +478,9 @@ def main():
     
     parser = argparse.ArgumentParser(description="Markdown → 微信公众号 HTML")
     parser.add_argument("input", help="输入的 Markdown 文件路径")
-    parser.add_argument("output", nargs="?", help="输出的 HTML 文件路径（可选）")
     parser.add_argument("--style", choices=list(PROFILES.keys()), default=None,
                         help="排版风格（ink/azure/cinnabar），不指定则自动分析")
+    parser.add_argument("output", nargs="?", help="输出的 HTML 文件路径（可选）")
     
     args = parser.parse_args()
     
