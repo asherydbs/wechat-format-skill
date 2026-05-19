@@ -34,11 +34,16 @@ description: >
 ### 第二步：执行转换
 
 ```bash
-python3 ~/.hermes/skills/wechat-format/scripts/wechat-format.py input.md [--style ink|azure|cinnabar] [output.html]
+# 推荐写法：output 路径放在 --style 前面（argparse nargs="?" 的限制）
+python3 ~/.hermes/skills/wechat-format/scripts/wechat-format.py input.md output.html --style=ink
+
+# 不带 output 路径（自动生成 input.wechat.html）
+python3 ~/.hermes/skills/wechat-format/scripts/wechat-format.py input.md --style=ink
 ```
 
-- `--style` 可选，不指定则脚本自动分析（但你的判断比你准，最好你主动指定）
-- 不指定 output 路径时，在 input 同目录生成 `input.wechat.html`
+- `--style` 可选（ink/azure/cinnabar），不指定则脚本自动分析——但你的判断更准，主动指定优先
+- `output` 可选，缺省在 input 同目录生成 `input.wechat.html`
+- 注意：`output` 位置参数要放在 `--style` 前面，否则 argparse 的 nargs="?" 会吞掉 style 的值
 
 ### 第三步：验证
 
@@ -78,7 +83,7 @@ python3 ~/.hermes/skills/wechat-format/scripts/wechat-format.py input.md [--styl
 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif
 ```
 
-## 支持的内容元素
+## 支持的 Markdown 元素
 
 | Markdown | 转换结果 |
 |----------|----------|
@@ -97,13 +102,63 @@ python3 ~/.hermes/skills/wechat-format/scripts/wechat-format.py input.md [--styl
 | `---` | 分割线 |
 | YAML frontmatter `title:` | 文章标题（自动提取） |
 
+## 排版组件（让版面更丰富）
+
+支持 5 种围栏块组件，在 markdown 中用 `:::` 标记：
+
+### 卡片 — ::: card
+```markdown
+::: card
+这里放一段独立的内容，会被包裹成白色圆角卡片。
+支持多段落和内联格式。
+:::
+```
+
+### 重点高亮 — ::: highlight
+```markdown
+::: highlight
+这是需要读者特别注意的内容，背景为风格主色调的淡色。
+:::
+```
+
+### 金句 — ::: quote
+```markdown
+::: quote
+这不是创作，这是用工具在作弊。
+:::
+```
+字号 18px + 加粗 + 主色调 + 粗左边框。适合文章中最有力量的句子。
+
+### 提示 — ::: tip
+```markdown
+::: tip
+一个小提示或补充说明，带圆点标记。
+:::
+```
+
+### 装饰标题 — ::: section
+```markdown
+::: section
+一
+:::
+```
+渲染为背景色块小标签，居中，可作为章节分隔的视觉标记。
+
+### 使用建议
+
+- 一篇 2000 字左右的文章，用 3-5 个组件点缀就够了。太多反而乱
+- **金句卡片**最适合用在段落结尾的总结句
+- **装饰标题**用在长文的章节分界处，替代 "一、二、三"
+- **卡片**用来包裹一组相关的短段落
+- 这些组件识别由脚本处理，你（AI）在读文章后主动判断哪里该用什么，加到 markdown 里再跑脚本
+
 ## 陷阱（从教训中来）
 
 - **不要套固定模板。** 第一次设计这个 skill 时我写了一组固定 CSS，被用户指出"是根据内容设计排版，不是套模板"。修改后才有三套风格+内容分析。每次执行时先读文章、判断类型、选风格——风格选择本身就是输出质量的一部分。
 - **脚本的自动检测不可全信。** `--style` 不指定时用关键词分析，但混合内容（如随笔中有一个代码块）可能误判。用你自己的判断覆盖脚本分析，确认后再执行。
 - **Pygments 的 class 属性。** 代码语法高亮必须用 `noclasses=True`（内联样式），否则输出 `<span class="k">` 会被微信过滤。
 - **`<s>` 和 `<u>` 的正则可能误吞其他标签。** `<s` 会匹配 `<span>`，`<u` 会匹配 `<ul>`。脚本中已用 `(?![a-zA-Z])` 做词边界检查。
-- **图片占位。** 输出中的 `<img src="...">` 在微信中会被转存到 `mmbiz.qpic.cn`。原文 src 只是占位。
+- **argparse nargs="?" + 可选标志的相互干扰。** 当输出路径（`nargs="?"` 位置参数）跟在 `--style` 标志后面时，argparse 会把 `--style` 后面的值当成 output 而非 style 的值。必须在调用时把 output 放 `--style` 之前，或者不用 `nargs="?"`。
 
 ## 注意事项
 
